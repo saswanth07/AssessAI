@@ -1,6 +1,7 @@
 "use client"
 
-import { useTransition, useState } from "react"
+import { useTransition, useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 
 import Link from "next/link"
 import { loginAction } from "@/app/actions/auth"
@@ -14,9 +15,20 @@ export function LoginForm() {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
+  const searchParams = useSearchParams()
+  const registered = searchParams.get("registered")
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (registered === "instructor") {
+      setSuccessMessage("Instructor account created successfully. You can now sign in.")
+    }
+  }, [registered])
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    setSuccessMessage(null)
     const formData = new FormData(event.currentTarget)
     startTransition(async () => {
       const result = await loginAction(formData)
@@ -37,6 +49,11 @@ export function LoginForm() {
           {error && (
             <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md">
               {error}
+            </div>
+          )}
+          {successMessage && (
+            <div className="p-3 text-sm text-green-600 bg-green-50 rounded-md">
+              {successMessage}
             </div>
           )}
           <div className="space-y-2">
@@ -72,6 +89,13 @@ export function LoginForm() {
             Don&apos;t have an account?{" "}
             <Link href="/register" className="font-semibold text-primary hover:underline">
               Create an account
+            </Link>
+          </div>
+          
+          <div className="text-center text-xs text-muted-foreground/70 mt-2">
+            Are you an instructor?{" "}
+            <Link href="/instructor/register" className="hover:text-primary transition-colors hover:underline">
+              Instructor registration
             </Link>
           </div>
         </CardFooter>

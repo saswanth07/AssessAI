@@ -7,9 +7,10 @@ export default auth((req) => {
   const role = req.auth?.user?.role as string | undefined
 
   const isApiAuthRoute = nextUrl.pathname.startsWith('/api/auth')
-  const isAuthRoute = nextUrl.pathname === '/login' || nextUrl.pathname === '/register' || nextUrl.pathname === '/reset-password' || nextUrl.pathname === '/forgot-password'
+  const isAuthRoute = nextUrl.pathname === '/login' || nextUrl.pathname === '/register' || nextUrl.pathname === '/reset-password' || nextUrl.pathname === '/forgot-password' || nextUrl.pathname === '/instructor/register'
   const isInstructorRoute = nextUrl.pathname.startsWith('/instructor')
   const isStudentRoute = nextUrl.pathname.startsWith('/student')
+  
   
   if (isApiAuthRoute) {
     return NextResponse.next()
