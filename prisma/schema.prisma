@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+model User {
+  id           String        @id @default(cuid())
+  name         String?
+  email        String        @unique
+  password     String
+  role         String        @default("STUDENT") // INSTRUCTOR | STUDENT
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdTests Test[]        @relation("InstructorTests")
+  testAttempts TestAttempt[]
+  resetTokens  PasswordResetToken[]
+}
+
+model Test {
+  id                    String        @id @default(cuid())
+  title                 String
+  subject               String
+  topic                 String
+  description           String?
+  difficulty            String        // EASY | MEDIUM | HARD
+  duration              Int
+  status                String        @default("DRAFT") // DRAFT | OPEN | CLOSED | ARCHIVED
+  allowMultipleAttempts Boolean       @default(false)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  creatorId             String
+  questions             Question[]
+  creator               User          @relation("InstructorTests", fields: [creatorId], references: [id])
+  attempts              TestAttempt[]
+}
+
+model Question {
+  id            String          @id @default(cuid())
+  testId        String
+  question      String
+  type          String          // MCQ | TRUE_FALSE
+  options       String          // JSON array of strings
+  correctAnswer String
+  topic         String?
+  difficulty    String          // EASY | MEDIUM | HARD
+  explanation   String?
+  order         Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  test          Test            @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers       StudentAnswer[]
+}
+
+model TestAttempt {
+  id        String          @id @default(cuid())
+  studentId String
+  testId    String
+  startTime DateTime        @default(now())
+  endTime   DateTime?
+  status    String          @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED
+  result    Result?
+  answers   StudentAnswer[]
+  student   User            @relation(fields: [studentId], references: [id])
+  test      Test            @relation(fields: [testId], references: [id])
+
+  @@unique([studentId, testId])
+}
+
+model StudentAnswer {
+  id             String      @id @default(cuid())
+  attemptId      String
+  questionId     String
+  selectedOption String?
+  isCorrect      Boolean     @default(false)
+  attempt        TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+}
+
+model Result {
+  id               String      @id @default(cuid())
+  attemptId        String      @unique
+  score            Int
+  percentage       Float
+  correctCount     Int
+  incorrectCount   Int
+  unansweredCount  Int         @default(0)
+  timeTakenSeconds Int         @default(0)
+  topicPerformance String?     // JSON string
+  aiFeedback       String?     // JSON string
+  createdAt        DateTime    @default(now())
+  attempt          TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
